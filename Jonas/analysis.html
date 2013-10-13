@@ -1,0 +1,580 @@
+<h1>Predicting processor performance</h1>
+
+<p><code>r
+data &lt;- read.table("../data/training.csv", sep = ",")
+preds = c("Width", "ROBSize", "IQSize", "LSQSize", "RFSize", "RFReadPorts", 
+    "RFWritePorts", "GshareSize", "BTBSize", "BranchesAllowed", "L1Icache", 
+    "L1Dcache", "L2Ucache", "Depth")
+vars = c(preds, "Delay")
+names(data) = vars
+</code></p>
+
+<h2>Visualizing the dataset</h2>
+
+<p><code>r
+plot(data$Delay)
+</code></p>
+
+<p><img src="figure/unnamed-chunk-21.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$Delay))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-22.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(log(data$Delay)))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-23.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$Width))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-24.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$ROBSize))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-25.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$IQSize))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-26.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$LSQSize))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-27.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$RFSize))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-28.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$RFReadPorts))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-29.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$RFWritePorts))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-210.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$GshareSize))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-211.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$BTBSize))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-212.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$BranchesAllowed))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-213.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$L1Icache))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-214.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$L1Dcache))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-215.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$L2Ucache))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-216.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><code>r
+plot(density(data$Depth))
+</code></p>
+
+<p><img src="figure/unnamed-chunk-217.png" alt="plot of chunk unnamed-chunk-2" title="" /> </p>
+
+<p><em>Conclusion</em>: a logarithmic transformation of our target variable Delay seems to be appropriate.
+Also, there are no outliers in Delay.</p>
+
+<h2>Getting relative variable importance using trees</h2>
+
+<p><code>r
+require(party)
+</code></p>
+
+<p>```</p>
+
+<h2>Loading required package: party</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: methods</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: survival</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: splines</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: grid</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: modeltools</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: stats4</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: coin</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: mvtnorm</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: zoo</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Attaching package: 'zoo'</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>The following object is masked from 'package:base':</h2>
+
+<h2> </h2>
+
+<h2>as.Date, as.Date.numeric</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: sandwich</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: strucchange</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: vcd</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: MASS</h2>
+
+<p>```</p>
+
+<p>```</p>
+
+<h2>Loading required package: colorspace</h2>
+
+<p>```</p>
+
+<p><code>r
+require(lattice)
+</code></p>
+
+<p>```</p>
+
+<h2>Loading required package: lattice</h2>
+
+<p>```</p>
+
+<p><code>r
+data.forest &lt;- cforest(Delay ~ ., data = data[, vars])
+data.varimp &lt;- sort(varimp(data.forest))
+dotplot(data.varimp)
+</code></p>
+
+<p><img src="figure/unnamed-chunk-31.png" alt="plot of chunk unnamed-chunk-3" title="" /> </p>
+
+<p><code>r
+data.tree &lt;- ctree(Delay ~ ., data = data[, vars])
+plot(data.tree)
+</code></p>
+
+<p><img src="figure/unnamed-chunk-32.png" alt="plot of chunk unnamed-chunk-3" title="" /> </p>
+
+<p><em>Conclusion</em>: L2Ucache and Depth are the important variables</p>
+
+<h2>Visualize L2Ucache and Depth</h2>
+
+<p><code>r
+plot(data$Delay ~ data$L2Ucache)
+</code></p>
+
+<p><img src="figure/unnamed-chunk-41.png" alt="plot of chunk unnamed-chunk-4" title="" /> </p>
+
+<p><code>r
+plot(log(data$Delay) ~ data$L2Ucache)
+</code></p>
+
+<p><img src="figure/unnamed-chunk-42.png" alt="plot of chunk unnamed-chunk-4" title="" /> </p>
+
+<p><code>r
+plot(data$Delay ~ data$Depth)
+</code></p>
+
+<p><img src="figure/unnamed-chunk-43.png" alt="plot of chunk unnamed-chunk-4" title="" /> </p>
+
+<p><code>r
+plot(log(data$Delay) ~ data$Depth)
+</code></p>
+
+<p><img src="figure/unnamed-chunk-44.png" alt="plot of chunk unnamed-chunk-4" title="" /> </p>
+
+<p><em>Conclusion</em>: L2Ucache seems not to have linear influence.
+Depth might interact with a variable.</p>
+
+<h2>Defining utility functions</h2>
+
+<p>```r</p>
+
+<h1>root mean square error</h1>
+
+<p>rmse &lt;- function(y, yhat) {
+    return(sqrt(mean((y - yhat)^2)))
+}</p>
+
+<h1>cross validation using RMSE returns mean of the k RMSEs</h1>
+
+<p>crossValidateLM &lt;- function(formula, fullData, k = 10) {
+    group &lt;- sample(1:k, nrow(fullData), replace = TRUE)
+    # groupedData &lt;- split(fullData,groups)
+    responseVariable &lt;- all.vars(formula)[1]
+    errors &lt;- c()
+    for (i in 1:k) {
+        model &lt;- lm(formula, data = fullData[group != i, ])
+        predictions &lt;- predict(model, fullData[group == i, ])
+        errors &lt;- c(errors, rmse(data[group == i, c(responseVariable)], predictions))
+    }
+    return(mean(errors))
+}
+```</p>
+
+<h2>Using Linear Regression</h2>
+
+<p>With all predictors linear.</p>
+
+<p><code>r
+formula = as.formula("Delay~.")
+data.lm &lt;- lm(formula, data = data)
+summary(data.lm)
+</code></p>
+
+<p>```</p>
+
+<h2> </h2>
+
+<h2>Call:</h2>
+
+<h2>lm(formula = formula, data = data)</h2>
+
+<h2> </h2>
+
+<h2>Residuals:</h2>
+
+<h2>Min     1Q Median     3Q    Max</h2>
+
+<h2>-30544  -7531    371   8429  31120</h2>
+
+<h2> </h2>
+
+<h2>Coefficients:</h2>
+
+<h2>Estimate Std. Error t value Pr(>|t|)</h2>
+
+<h2>(Intercept)      3.24e+04   5.02e+03    6.46  4.0e-10 <em>*</em></h2>
+
+<h2>Width           -3.61e+00   4.64e+02   -0.01   0.9938</h2>
+
+<h2>ROBSize          2.69e+01   2.20e+01    1.22   0.2232</h2>
+
+<h2>IQSize          -5.74e+01   2.99e+01   -1.92   0.0560 .</h2>
+
+<h2>LSQSize         -7.32e+00   2.89e+01   -0.25   0.8002</h2>
+
+<h2>RFSize          -9.36e+01   2.05e+01   -4.56  7.3e-06 <em>*</em></h2>
+
+<h2>RFReadPorts      9.57e+01   1.69e+02    0.56   0.5727</h2>
+
+<h2>RFWritePorts    -1.97e+02   3.31e+02   -0.60   0.5513</h2>
+
+<h2>GshareSize       8.07e-02   5.96e-02    1.35   0.1766</h2>
+
+<h2>BTBSize          5.50e-01   2.12e+00    0.26   0.7952</h2>
+
+<h2>BranchesAllowed -1.96e+02   7.44e+01   -2.64   0.0086 **</h2>
+
+<h2>L1Icache        -1.95e+00   1.97e+00   -0.99   0.3237</h2>
+
+<h2>L1Dcache         1.91e+00   1.95e+00    0.98   0.3261</h2>
+
+<h2>L2Ucache        -4.72e+00   2.31e-01  -20.43  &lt; 2e-16 <em>*</em></h2>
+
+<h2>Depth            9.06e+02   7.89e+01   11.48  &lt; 2e-16 <em>*</em></h2>
+
+<h2>---</h2>
+
+<h2>Signif. codes:  0 '<strong><em>' 0.001 '</strong>' 0.01 '</em>' 0.05 '.' 0.1 ' ' 1</h2>
+
+<h2> </h2>
+
+<h2>Residual standard error: 11900 on 318 degrees of freedom</h2>
+
+<h2>Multiple R-squared:  0.651,  Adjusted R-squared:  0.635</h2>
+
+<h2>F-statistic: 42.3 on 14 and 318 DF,  p-value: &lt;2e-16</h2>
+
+<p>```</p>
+
+<p><code>r
+crossValidateLM(formula, data)
+</code></p>
+
+<p>```</p>
+
+<h2>[1] 12290</h2>
+
+<p>```</p>
+
+<p>```r</p>
+
+<p>formula = as.formula("log(Delay)~.")
+data.lm &lt;- lm(formula, data = data)
+summary(data.lm)
+```</p>
+
+<p>```</p>
+
+<h2> </h2>
+
+<h2>Call:</h2>
+
+<h2>lm(formula = formula, data = data)</h2>
+
+<h2> </h2>
+
+<h2>Residuals:</h2>
+
+<h2>Min      1Q  Median      3Q     Max</h2>
+
+<h2>-1.3025 -0.3059  0.0996  0.3703  1.2227</h2>
+
+<h2> </h2>
+
+<h2>Coefficients:</h2>
+
+<h2>Estimate Std. Error t value Pr(>|t|)</h2>
+
+<h2>(Intercept)      1.06e+01   2.14e-01   49.29  &lt; 2e-16 <em>*</em></h2>
+
+<h2>Width           -1.47e-02   1.98e-02   -0.74   0.4583</h2>
+
+<h2>ROBSize          1.51e-03   9.42e-04    1.60   0.1095</h2>
+
+<h2>IQSize          -3.02e-03   1.28e-03   -2.36   0.0189 *</h2>
+
+<h2>LSQSize          3.97e-04   1.24e-03    0.32   0.7482</h2>
+
+<h2>RFSize          -4.56e-03   8.78e-04   -5.20  3.6e-07 <em>*</em></h2>
+
+<h2>RFReadPorts      5.10e-03   7.25e-03    0.70   0.4819</h2>
+
+<h2>RFWritePorts    -1.41e-02   1.41e-02   -1.00   0.3204</h2>
+
+<h2>GshareSize       3.54e-06   2.55e-06    1.39   0.1655</h2>
+
+<h2>BTBSize         -4.62e-05   9.05e-05   -0.51   0.6100</h2>
+
+<h2>BranchesAllowed -1.03e-02   3.18e-03   -3.25   0.0013 **</h2>
+
+<h2>L1Icache        -1.68e-05   8.43e-05   -0.20   0.8424</h2>
+
+<h2>L1Dcache         7.24e-05   8.32e-05    0.87   0.3851</h2>
+
+<h2>L2Ucache        -2.28e-04   9.88e-06  -23.11  &lt; 2e-16 <em>*</em></h2>
+
+<h2>Depth            2.88e-02   3.37e-03    8.52  6.5e-16 <em>*</em></h2>
+
+<h2>---</h2>
+
+<h2>Signif. codes:  0 '<strong><em>' 0.001 '</strong>' 0.01 '</em>' 0.05 '.' 0.1 ' ' 1</h2>
+
+<h2> </h2>
+
+<h2>Residual standard error: 0.51 on 318 degrees of freedom</h2>
+
+<h2>Multiple R-squared:  0.682,  Adjusted R-squared:  0.668</h2>
+
+<h2>F-statistic: 48.7 on 14 and 318 DF,  p-value: &lt;2e-16</h2>
+
+<p>```</p>
+
+<p><code>r
+crossValidateLM(formula, data)
+</code></p>
+
+<p>```</p>
+
+<h2>[1] 31544</h2>
+
+<p>```</p>
+
+<p><em>Conclusion</em>: many predictors not significant, log(response) performs worse</p>
+
+<p>Select the significant selectors iteratively:</p>
+
+<p>```r</p>
+
+<h1>formula = as.formula('Delay)~ Width+ ROBSize+ IQSize+ LSQSize+ RFSize+</h1>
+
+<h1>RFReadPorts+ RFWritePorts+ GshareSize+ BTBSize+ BranchesAllowed+</h1>
+
+<h1>L1Icache+ L1Dcache+ L2Ucache+ Depth')</h1>
+
+<p>formula = as.formula("Delay~\n               IQSize+\n               poly(RFSize,2)+\n               BranchesAllowed+\n               Depth+\n               Depth:I(log(L2Ucache))")
+data.lm &lt;- lm(formula, data = data)
+summary(data.lm)
+```</p>
+
+<p>```</p>
+
+<h2> </h2>
+
+<h2>Call:</h2>
+
+<h2>lm(formula = formula, data = data)</h2>
+
+<h2> </h2>
+
+<h2>Residuals:</h2>
+
+<h2>Min     1Q Median     3Q    Max</h2>
+
+<h2>-30836  -6213   -117   5108  33312</h2>
+
+<h2> </h2>
+
+<h2>Coefficients:</h2>
+
+<h2>Estimate Std. Error t value Pr(>|t|)</h2>
+
+<h2>(Intercept)             11656.1     2307.1    5.05  7.3e-07 <em>*</em></h2>
+
+<h2>IQSize                    -46.2       24.0   -1.93   0.0551 .</h2>
+
+<h2>poly(RFSize, 2)1       -47535.9     9731.3   -4.88  1.6e-06 <em>*</em></h2>
+
+<h2>poly(RFSize, 2)2        26765.0     9753.0    2.74   0.0064 **</h2>
+
+<h2>BranchesAllowed          -191.8       59.0   -3.25   0.0013 **</h2>
+
+<h2>Depth                    5844.8      190.7   30.65  &lt; 2e-16 <em>*</em></h2>
+
+<h2>Depth:I(log(L2Ucache))   -641.5       22.4  -28.63  &lt; 2e-16 <em>*</em></h2>
+
+<h2>---</h2>
+
+<h2>Signif. codes:  0 '<strong><em>' 0.001 '</strong>' 0.01 '</em>' 0.05 '.' 0.1 ' ' 1</h2>
+
+<h2> </h2>
+
+<h2>Residual standard error: 9670 on 326 degrees of freedom</h2>
+
+<h2>Multiple R-squared:  0.765,  Adjusted R-squared:  0.76</h2>
+
+<h2>F-statistic:  177 on 6 and 326 DF,  p-value: &lt;2e-16</h2>
+
+<p>```</p>
+
+<p><code>r
+crossValidateLM(formula, data)
+</code></p>
+
+<p>```</p>
+
+<h2>[1] 9664</h2>
+
+<p>```</p>
+
+<p><code>r
+bestModel = data.lm
+plot(data$Delay, data$RFSize)
+</code></p>
+
+<p><img src="figure/unnamed-chunk-7.png" alt="plot of chunk unnamed-chunk-7" title="" /> </p>
+
+<p><em>Conclusion</em>: L2Ucache is a better predictor when log-transformed. Huge reduction of rmse when L2Ucache in interaction with Depth. 
+RFSize squared is significant.</p>
+
+<h2>Find the correct learning parameter</h2>
+
+<p>first normalize predictors</p>
+
+<h2>Predict labels for validation set</h2>
+
+<p><code>r
+validation &lt;- read.table("../data/validation.csv", sep = ",")
+names(validation) &lt;- preds
+write.table(predict(bestModel, validation), file = "validationPreds.csv", row.names = FALSE, 
+    col.names = FALSE)
+</code></p>

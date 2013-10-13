@@ -1,0 +1,143 @@
+Predicting processor performance
+========================================================
+
+
+```{r}
+data <- read.table('../data/training.csv', sep=",")
+preds = c("Width", "ROBSize", "IQSize","LSQSize","RFSize","RFReadPorts","RFWritePorts","GshareSize",
+  "BTBSize","BranchesAllowed","L1Icache","L1Dcache","L2Ucache","Depth")
+vars = c(preds,"Delay")
+names(data) = vars
+```
+
+Visualizing the dataset
+-----------------------
+```{r fig.width=7, fig.height=6}
+plot(data$Delay)
+plot(density(data$Delay))
+plot(density(log(data$Delay)))
+plot(density(data$Width))
+plot(density(data$ROBSize))
+plot(density(data$IQSize))
+plot(density(data$LSQSize))
+plot(density(data$RFSize))
+plot(density(data$RFReadPorts))
+plot(density(data$RFWritePorts))
+plot(density(data$GshareSize))
+plot(density(data$BTBSize))
+plot(density(data$BranchesAllowed))
+plot(density(data$L1Icache))
+plot(density(data$L1Dcache))
+plot(density(data$L2Ucache))
+plot(density(data$Depth))
+```
+*Conclusion*: a logarithmic transformation of our target variable Delay seems to be appropriate.
+Also, there are no outliers in Delay.
+
+Getting relative variable importance using trees
+-------------------------------------------------
+```{r}
+require(party)
+require(lattice)
+data.forest <- cforest(Delay~., data=data[, vars])
+data.varimp <- sort(varimp(data.forest))
+dotplot(data.varimp)
+data.tree <- ctree(Delay~., data=data[, vars])
+plot(data.tree)
+```
+*Conclusion*: L2Ucache and Depth are the important variables
+
+Visualize L2Ucache and Depth
+----------------------------
+```{r}
+     plot(data$Delay~data$L2Ucache)
+     plot(log(data$Delay)~data$L2Ucache)
+     plot(data$Delay~data$Depth)
+     plot(log(data$Delay)~data$Depth)
+```
+*Conclusion*: L2Ucache seems not to have linear influence.
+Depth might interact with a variable.
+
+Defining utility functions
+---------------------------
+```{r}
+#root mean square error
+rmse <- function(y, yhat) {
+  return(sqrt(mean((y-yhat)^2)))
+}
+     
+#cross validation using RMSE
+#returns mean of the k RMSEs
+crossValidateLM <- function(formula, fullData, k=10) {
+  group <- sample(1:k, nrow(fullData), replace=TRUE)
+  #groupedData <- split(fullData,groups)
+  responseVariable <- all.vars(formula)[1]
+  errors <- c()
+  for(i in 1:k) {
+    model <- lm(formula, data=fullData[group!=i,])
+    predictions <- predict(model, fullData[group==i,])
+    errors <- c(errors, rmse(data[group==i,c(responseVariable)], predictions))
+  }
+  return(mean(errors))
+}
+```
+
+Using Linear Regression
+-----------------------
+With all predictors linear.
+```{r}
+formula = as.formula("Delay~.")
+data.lm <- lm(formula, data=data)
+summary(data.lm)
+crossValidateLM(formula,data)
+     
+formula = as.formula("log(Delay)~.")
+data.lm <- lm(formula, data=data)
+summary(data.lm)
+crossValidateLM(formula,data)
+```
+*Conclusion*: many predictors not significant, log(response) performs worse
+
+Select the significant selectors iteratively:
+```{r}
+# formula = as.formula("Delay)~
+#          Width+
+#          ROBSize+
+#          IQSize+
+#          LSQSize+
+#          RFSize+
+#          RFReadPorts+
+#          RFWritePorts+
+#          GshareSize+
+#          BTBSize+
+#          BranchesAllowed+
+#          L1Icache+
+#          L1Dcache+
+#          L2Ucache+
+#          Depth")
+formula = as.formula("Delay~
+               IQSize+
+               poly(RFSize,2)+
+               BranchesAllowed+
+               Depth+
+               Depth:I(log(L2Ucache))")
+data.lm <- lm(formula, data=data)
+summary(data.lm)
+crossValidateLM(formula,data)
+bestModel = data.lm
+plot(data$Delay, data$RFSize)
+```
+*Conclusion*: L2Ucache is a better predictor when log-transformed. Huge reduction of rmse when L2Ucache in interaction with Depth. 
+RFSize squared is significant.
+
+Find the correct learning parameter
+-------------------------------------
+first normalize predictors
+
+Predict labels for validation set
+-----------------------
+```{r}
+validation <- read.table("../data/validation.csv", sep=",")
+names(validation) <- preds
+write.table(predict(bestModel,validation), file="validationPreds.csv", row.names=FALSE, col.names=FALSE)
+```
