@@ -68,13 +68,13 @@ rmse <- function(y, yhat) {
      
 #cross validation using RMSE
 #returns mean of the k RMSEs
-crossValidateLM <- function(formula, fullData, k=10) {
+crossValidate <- function(modelFunction, formula, fullData, k=10) {
   group <- sample(1:k, nrow(fullData), replace=TRUE)
   #groupedData <- split(fullData,groups)
   responseVariable <- all.vars(formula)[1]
   errors <- c()
   for(i in 1:k) {
-    model <- lm(formula, data=fullData[group!=i,])
+    model <- modelFunction(formula, data=fullData[group!=i,])
     predictions <- predict(model, fullData[group==i,])
     errors <- c(errors, rmse(data[group==i,c(responseVariable)], predictions))
   }
@@ -89,12 +89,12 @@ With all predictors linear.
 formula = as.formula("Delay~.")
 data.lm <- lm(formula, data=data)
 summary(data.lm)
-crossValidateLM(formula,data)
+crossValidate(lm,formula,data)
      
 formula = as.formula("log(Delay)~.")
 data.lm <- lm(formula, data=data)
 summary(data.lm)
-crossValidateLM(formula,data)
+crossValidate(lm,formula,data)
 ```
 *Conclusion*: many predictors not significant, log(response) performs worse
 
@@ -123,7 +123,7 @@ formula = as.formula("Delay~
                L2Ucache")
 simple.lm <- lm(formula, data=data)
 summary(simple.lm)
-crossValidateLM(formula,data)
+crossValidate(lm,formula,data)
 
 
 formula = as.formula("log(Delay)~
@@ -134,7 +134,7 @@ formula = as.formula("log(Delay)~
                L2Ucache")
 simpleLog.lm <- lm(formula, data=data)
 summary(simpleLog.lm)
-crossValidateLM(formula,data)
+crossValidate(lm,formula,data)
 
 formula = as.formula("Delay~
                IQSize+
@@ -144,7 +144,7 @@ formula = as.formula("Delay~
                Depth:I(log(L2Ucache))")
 complex.lm <- lm(formula, data=data)
 summary(complex.lm)
-crossValidateLM(formula,data)
+crossValidate(lm,formula,data)
 
 plot(data$Delay, data$RFSize)
 ```
@@ -155,6 +155,76 @@ Find the correct learning parameter
 -------------------------------------
 first normalize predictors
 
+```{r}
+#NYI
+
+# crossValidateGlmnet <- function(x,y,k=10) {
+#   group <- sample(1:k, nrow(x), replace=TRUE)
+#   errors <- c()
+#   for(i in 1:k) {
+#     x <- as.matrix(x[group!=i,])
+#     y <- as.matrix(y[group!=i,])
+#     complex.rlm <- glmnet(x,y,family="gaussian")
+#     predictions <- predict(complex.rlm, x[group==i,])
+#     errors <- c(errors, rmse(y[group==i,], predictions))
+#   }
+#   return(mean(errors))
+# }
+# 
+# formula = as.formula("Delay~
+#                IQSize+
+#                poly(RFSize,2)+
+#                BranchesAllowed+
+#                Depth+
+#                Depth:I(log(L2Ucache))")
+# complexReg.lm <- simple.ridge(formula, data=data, lambda=1)
+# summary(complexReg.lm)
+# coef(complexReg.lm)
+# select(complexReg.lm)
+# crossValidate(lm.ridge,formula,data)
+# require(ElemStatLearn)
+# install.packages("glmnet")
+# require(glmnet)
+# x <- data[,c(1:14)]
+# y <- data[,c(15)]
+# crossValidateGlmnet(x,y)
+# complex.rlm <- glmnet(x,y, family="gaussian")
+# rmse(predict(complex.rlm, x, s=1),y)
+#  
+# pred <- predict(complex.rlm, x, s=0.01)
+# cv.fit <- cv.glmnet(x,y)
+# sqrt(cv.fit$cvm)
+# cv.fit$lambda
+# plot(cv.fit)
+```
+
+GAM
+----
+```{r warning=FALSE}
+require(mgcv)
+formula = as.formula("Delay~
+         s(RFSize)+
+         BranchesAllowed+
+         te(L2Ucache,Depth)")
+
+complex.gam <- gam(formula, data=data)
+summary(complex.gam)
+vis.gam(complex.gam, view=c("L2Ucache", "Depth"), plot.type="contour", color="terrain", too.far=0.1)
+AIC(complex.gam)
+crossValidate(gam,formula,data)
+
+data$fL2Ucache <- as.factor(data$L2Ucache)
+formula = as.formula("Delay~
+         s(RFSize)+
+         BranchesAllowed*fL2Ucache+
+         +s(Depth, by=fL2Ucache)")
+
+complex.gam2 <- gam(formula, data=data)
+summary(complex.gam2)
+AIC(complex.gam2)
+crossValidate(gam,formula,data)
+```
+
 Predict labels for validation set
 -----------------------
 ```{r}
@@ -163,4 +233,7 @@ names(validation) <- preds
 write.table(predict(simple.lm,validation), file="valPredLMSimple.csv", row.names=FALSE, col.names=FALSE)
 write.table(predict(simpleLog.lm,validation), file="valPredLMSimpleLog.csv", row.names=FALSE, col.names=FALSE)
 write.table(predict(complex.lm,validation), file="valPredLMComplex.csv", row.names=FALSE, col.names=FALSE)
+write.table(predict(complex.gam,validation), file="valPredGAM.csv", row.names=FALSE, col.names=FALSE)
+validation$fL2Ucache <- as.factor(validation$L2Ucache)
+write.table(predict(complex.gam2,validation), file="valPredGAM2.csv", row.names=FALSE, col.names=FALSE)
 ```

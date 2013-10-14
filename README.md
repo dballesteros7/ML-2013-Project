@@ -12,12 +12,12 @@ Run make to generate predictions for the validation testset.
 | simple logLM              | 31288 | 1.2   |
 | complex LM                | **9652**  | **0.36**  |
 | regularized complex LM    |   -    |   -    |
-| GAM                       |   -    |   -   |
+| GAM                       |   5514    |   -   |
 
 -   *simple LM*: First analysis with linear regression in R, use the significant features: IQSize,RFSize,BranchesAllowed,Depth,L2Ucache
 -   *simple logLM*: model with log-transformation for dependent variable
 -   *complex LM*: using logarithmic feature transformation, polynomial features and interactions. Without regularization.
 -   *regularized complex LM*: Add regularization.
--   *GAM*: Generalized additive model
+-   *GAM*: Generalized additive model using splines and tensor product. Maybe not allowed.
 
 [1] Mean RSME of 10-fold cross-validation
