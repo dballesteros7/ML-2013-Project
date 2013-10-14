@@ -117,14 +117,35 @@ Select the significant selectors iteratively:
 #          Depth")
 formula = as.formula("Delay~
                IQSize+
+               RFSize+
+               BranchesAllowed+
+               Depth+
+               L2Ucache")
+simple.lm <- lm(formula, data=data)
+summary(simple.lm)
+crossValidateLM(formula,data)
+
+
+formula = as.formula("log(Delay)~
+               IQSize+
+               RFSize+
+               BranchesAllowed+
+               Depth+
+               L2Ucache")
+simpleLog.lm <- lm(formula, data=data)
+summary(simpleLog.lm)
+crossValidateLM(formula,data)
+
+formula = as.formula("Delay~
+               IQSize+
                poly(RFSize,2)+
                BranchesAllowed+
                Depth+
                Depth:I(log(L2Ucache))")
-data.lm <- lm(formula, data=data)
-summary(data.lm)
+complex.lm <- lm(formula, data=data)
+summary(complex.lm)
 crossValidateLM(formula,data)
-bestModel = data.lm
+
 plot(data$Delay, data$RFSize)
 ```
 *Conclusion*: L2Ucache is a better predictor when log-transformed. Huge reduction of rmse when L2Ucache in interaction with Depth. 
@@ -139,5 +160,7 @@ Predict labels for validation set
 ```{r}
 validation <- read.table("../data/validation.csv", sep=",")
 names(validation) <- preds
-write.table(predict(bestModel,validation), file="validationPreds.csv", row.names=FALSE, col.names=FALSE)
+write.table(predict(simple.lm,validation), file="valPredLMSimple.csv", row.names=FALSE, col.names=FALSE)
+write.table(predict(simpleLog.lm,validation), file="valPredLMSimpleLog.csv", row.names=FALSE, col.names=FALSE)
+write.table(predict(complex.lm,validation), file="valPredLMComplex.csv", row.names=FALSE, col.names=FALSE)
 ```
