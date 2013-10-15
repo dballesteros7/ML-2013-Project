@@ -18,6 +18,6 @@ Run make to generate predictions for the validation testset.
 -   *simple logLM*: model with log-transformation for dependent variable
 -   *complex LM*: using logarithmic feature transformation, polynomial features and interactions. Without regularization.
 -   *regularized complex LM*: Add regularization.
--   *GAM*: Generalized additive model using splines and tensor product. Maybe not allowed.
+-   *GAM*: Generalized additive model using splines and tensor product.
 
 [1] Mean RSME of 10-fold cross-validation
