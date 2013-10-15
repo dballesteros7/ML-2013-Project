@@ -10,9 +10,9 @@ Run make to generate predictions for the validation testset.
 | -------------     |:-------------:| -----:|
 | simple LM                 | 12025 | 0.44  |
 | simple logLM              | 31288 | 1.2   |
-| complex LM                | **9652**  | **0.36**  |
+| complex LM                | 9652  | 0.36  |
 | regularized complex LM    |   -    |   -    |
-| GAM                       |   5514    |   -   |
+| GAM                       |   **5514**    |   **0.17**   |
 
 -   *simple LM*: First analysis with linear regression in R, use the significant features: IQSize,RFSize,BranchesAllowed,Depth,L2Ucache
 -   *simple logLM*: model with log-transformation for dependent variable
