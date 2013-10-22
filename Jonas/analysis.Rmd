@@ -211,7 +211,7 @@ Regularized Regression on our Dataset
 ---
 ```{r}
 featureTransform <- function(df) {
-  X <- cbind(df$RFSize, df$RFSize^2, df$BranchesAllowed, df$Depth, df$BranchesAllowed, df$Depth*df$BranchesAllowed)
+  X <- cbind(df$RFSize, df$RFSize^2, df$IQSize, df$BranchesAllowed, df$Depth, log(df$L2Ucache), df$Depth*log(df$L2Ucache))
   X <- scale(X, colMeans(X), apply(X,2,sd))
   X <- cbind(rep(1,nrow(X)),X)
   return(X)
@@ -219,7 +219,7 @@ featureTransform <- function(df) {
 X <- featureTransform(data)
 minError <- 2147483647
 minLambda <- "toBeFilled"
-for(lambda in c(0.0001,0.001,0.01,0.1,1,10,100,1000)) {
+for(lambda in c(0.00001, 0.0001,0.001,0.01,0.1,1,10,100,1000)) {
   cvError <- cv.reglm(X,data$Delay,lambda)
   if(cvError < minError) {
     minError <- cvError
