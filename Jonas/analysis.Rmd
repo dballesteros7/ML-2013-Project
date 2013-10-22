@@ -151,51 +151,84 @@ plot(data$Delay, data$RFSize)
 *Conclusion*: L2Ucache is a better predictor when log-transformed. Huge reduction of rmse when L2Ucache in interaction with Depth. 
 RFSize squared is significant.
 
-Find the correct learning parameter
--------------------------------------
-first normalize predictors
-
+Regularized Linear Regression
+-----
 ```{r}
-#NYI
+reglm <- function(X, y, lambda) {
+  #X: nxd, t(x)*X: dxd, I*lambda: dx1x1x1
+  #inv*t(X)*y: dxd*dxn*nx1=dx1
+  d <- ncol(X)
+  I <- diag(d)
+  return(solve(t(X)%*%X+lambda*I)%*%t(X)%*%y)
+}
 
-# crossValidateGlmnet <- function(x,y,k=10) {
-#   group <- sample(1:k, nrow(x), replace=TRUE)
-#   errors <- c()
-#   for(i in 1:k) {
-#     x <- as.matrix(x[group!=i,])
-#     y <- as.matrix(y[group!=i,])
-#     complex.rlm <- glmnet(x,y,family="gaussian")
-#     predictions <- predict(complex.rlm, x[group==i,])
-#     errors <- c(errors, rmse(y[group==i,], predictions))
-#   }
-#   return(mean(errors))
-# }
-# 
-# formula = as.formula("Delay~
-#                IQSize+
-#                poly(RFSize,2)+
-#                BranchesAllowed+
-#                Depth+
-#                Depth:I(log(L2Ucache))")
-# complexReg.lm <- simple.ridge(formula, data=data, lambda=1)
-# summary(complexReg.lm)
-# coef(complexReg.lm)
-# select(complexReg.lm)
-# crossValidate(lm.ridge,formula,data)
-# require(ElemStatLearn)
-# install.packages("glmnet")
-# require(glmnet)
-# x <- data[,c(1:14)]
-# y <- data[,c(15)]
-# crossValidateGlmnet(x,y)
-# complex.rlm <- glmnet(x,y, family="gaussian")
-# rmse(predict(complex.rlm, x, s=1),y)
-#  
-# pred <- predict(complex.rlm, x, s=0.01)
-# cv.fit <- cv.glmnet(x,y)
-# sqrt(cv.fit$cvm)
-# cv.fit$lambda
-# plot(cv.fit)
+predict.reglm <- function(X, w) {
+  #nxd*dx1=nx1
+  return(X%*%w)
+}
+
+test.reglm <- function() {
+  x <- seq(0,10,0.5)
+  y <- x^2 + rnorm(length(x), 0, 5.0)
+  plot(x,y)
+  X <- as.matrix(x)
+  w <- reglm(X,y,0.1)
+  lines(X, predict.reglm(X,w),col="blue")
+  addFeature <- function(x) {
+    #x <- scale(x, mean(x), sd(x))
+    X <- cbind(x, x^2,x^3,x^4,x^5,x^6)
+    X <- scale(X, colMeans(X), apply(X,2,sd))
+    X <- cbind(rep(1,nrow(X)),X)
+     return(X)
+  #  return(X)
+  }
+  X <- addFeature(x)
+  w <- reglm(X,y,0)
+  yhat <- predict.reglm(addFeature(x),w)
+  lines(x, yhat, col="red")
+  w <- reglm(X,y,0.1)
+  yhat <- predict.reglm(addFeature(x),w)
+  lines(x, yhat, col="brown")
+}
+
+cv.reglm <- function(X, y, lambda, k=10) {
+  group <- sample(1:k, nrow(X), replace=TRUE)
+  errors <- c()
+  for(i in 1:k) {
+    subY <- y[group==i]
+    subX <- X[group==i,]
+    nSubY <- y[group!=i]
+    nSubX <- X[group!=i,]
+    w <- reglm(nSubX,nSubY,lambda)
+    predictions <- predict.reglm(subX,w)
+    errors <- c(errors, rmse(subY, predictions))
+  }
+  return(mean(errors))
+} 
+```
+
+Regularized Regression on our Dataset
+---
+```{r}
+featureTransform <- function(df) {
+  X <- cbind(df$RFSize, df$RFSize^2, df$BranchesAllowed, df$Depth, df$BranchesAllowed, df$Depth*df$BranchesAllowed)
+  X <- scale(X, colMeans(X), apply(X,2,sd))
+  X <- cbind(rep(1,nrow(X)),X)
+  return(X)
+}
+X <- featureTransform(data)
+minError <- 2147483647
+minLambda <- "toBeFilled"
+for(lambda in c(0.0001,0.001,0.01,0.1,1,10,100,1000)) {
+  cvError <- cv.reglm(X,data$Delay,lambda)
+  if(cvError < minError) {
+    minError <- cvError
+    minLambda <- lambda
+  }
+}
+minError
+minLambda
+weights.reglm <- reglm(X, data$Delay, minLambda)
 ```
 
 GAM
@@ -233,6 +266,7 @@ names(validation) <- preds
 write.table(predict(simple.lm,validation), file="valPredLMSimple.csv", row.names=FALSE, col.names=FALSE)
 write.table(predict(simpleLog.lm,validation), file="valPredLMSimpleLog.csv", row.names=FALSE, col.names=FALSE)
 write.table(predict(complex.lm,validation), file="valPredLMComplex.csv", row.names=FALSE, col.names=FALSE)
+write.table(predict.reglm(featureTransform(validation), weights.reglm), file="valPredLMComplexReg.csv", row.names=FALSE, col.names=FALSE)
 write.table(predict(complex.gam,validation), file="valPredGAM.csv", row.names=FALSE, col.names=FALSE)
 validation$fL2Ucache <- as.factor(validation$L2Ucache)
 write.table(predict(complex.gam2,validation), file="valPredGAM2.csv", row.names=FALSE, col.names=FALSE)
