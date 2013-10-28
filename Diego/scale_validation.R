@@ -1,0 +1,15 @@
+scaled_validation <- validation;
+scaled_validation[,1] = scaled_validation[,1]/8;
+scaled_validation[,2] = scaled_validation[,2]/160;
+scaled_validation[,3] = scaled_validation[,3]/80;
+scaled_validation[,4] = scaled_validation[,4]/80;
+scaled_validation[,5] = scaled_validation[,5]/160;
+scaled_validation[,6] = scaled_validation[,6]/16;
+scaled_validation[,7] = scaled_validation[,7]/8;
+scaled_validation[,8] = scaled_validation[,8]/32768;
+scaled_validation[,9] = scaled_validation[,9]/1024;
+scaled_validation[,10] = scaled_validation[,10]/32;
+scaled_validation[,11] = scaled_validation[,11]/1024;
+scaled_validation[,12] = scaled_validation[,12]/1024;
+scaled_validation[,13] = scaled_validation[,13]/8192;
+scaled_validation[,14] = scaled_validation[,14]/3;
