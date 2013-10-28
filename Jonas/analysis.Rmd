@@ -258,6 +258,21 @@ AIC(complex.gam2)
 crossValidate(gam,formula,data)
 ```
 
+```{r}
+Gam with many predictors
+-----------
+formula = as.formula("Delay~
+         s(RFSize)+
+         BranchesAllowed+
+         te(L2Ucache,Depth)")
+
+complex.gam <- gam(formula, data=data)
+summary(complex.gam)
+vis.gam(complex.gam, view=c("L2Ucache", "Depth"), plot.type="contour", color="terrain", too.far=0.1)
+AIC(complex.gam)
+crossValidate(gam,formula,data)
+```
+
 Predict labels for validation set
 -----------------------
 ```{r}
