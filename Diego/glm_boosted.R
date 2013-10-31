@@ -1,4 +1,8 @@
-# First scale the variables
+require(mboost)
+require(stats)
+require(boot)
+
+# Scale the variables
 scaled_training <- training;
 scaled_training[,1] = scaled_training[,1]/8;
 scaled_training[,2] = scaled_training[,2]/160;
@@ -16,11 +20,19 @@ scaled_training[,13] = scaled_training[,13]/8192;
 scaled_training[,14] = scaled_training[,14]/3;
 scaled_training[,15] = scaled_training[,15]/1e4
 
-#Now lets do all the cross validation magic
+# Try a single GLM classifier, note that there is no regularization there.
+# Check the CV(RMSE) in 10-fold cross-validation, although no hyper parameter is being optimized.
 
-model <- glmboost(V15 ~ ., data = scaled_training, control = boost_control(mstop = 5000))
-cv10f <- cv(model.weights(model), type = "kfold")
+simple_model <- glm(V15 ~ ., data = scaled_training)
+print(summary(simple_model))
+cverror_simple <- cv.glm(scaled_training, simple_model, K = 10)
+#Print the CV(RMSE)
+print(cverror_simple$delta[2]/mean(scaled_training[,15]))
+
+# Now let's boost the GLM classifier
+model <- glmboost(V15 ~ ., data = scaled_training, control = boost_control(mstop = 1000))
+cv10f <- cv(model.weights(model), type = "kfold", B = 10)
 cvm <- cvrisk(model, folds = cv10f, papply = lapply)
-print(cvm)
-mstop(cvm)
+print(summary(model[mstop(cvm)]))
 plot(cvm)
+print(mean(cvm[, mstop(cvm)])/mean(scaled_training[,15]))
