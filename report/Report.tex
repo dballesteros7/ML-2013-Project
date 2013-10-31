@@ -18,7 +18,7 @@
 \renewcommand{\familydefault}{\sfdefault}
 
 \title{Machine Learning 2013: Project 1 - Regression Report}
-\author{Diego Ballesteros (diegob@student.ethz.ch)\\ Nick Jonas (jnick@student.ethz.ch)\\ Rastislav Starkov (starkovr@student.ethz.ch)\\}
+\author{Diego Ballesteros (diegob@student.ethz.ch)\\ Jonas Nick (jnick@student.ethz.ch)\\ Rastislav Starkov (starkovr@student.ethz.ch)\\}
 \date{\today}
 
 \begin{document}
@@ -27,11 +27,12 @@
 \section*{Experimental Protocol}
 
 \begin{enumerate}
-	\item Observe the data and analyze how the input features interact with the response variable (e.g. plotting individual curves).
-	\item Scale the data to obtain more stable numerical performance.
+	\item Observe the data and analyze how the input features interact with the response variable (e.g. plotting individual curves) and identify outliers.
+	\item Scale the data to fulfill the preconditions of some algorithms and obtain more stable numerical performance.
 	\item Select the different tools and algorithms, e.g. libsvm, Matlab, R, mboost.
-	\item Try the algorithms and analyze the results to identify possible transformations or important features. E.g. from linear regression we could identify some dominant features to use in the GAM regressor.
-	\item Identify the best tool and optimize its performance through cross-validation, use this as the final predictor.
+	\item Try the algorithms by using greedy backward feature selection with linear features and use some intuition and trial and error to identify possible transformations or important features. E.g. from linear regression we could identify some dominant features to use in the GAM regressor. Measure the performance using cross-validation.
+In addition use hypothesis testing to get rid of superfluous variables.
+    \item Identify the best tool and optimize its performance through cross-validation, use this as the final predictor.
 \end{enumerate}
 
 \section{Tools}
@@ -40,7 +41,7 @@ For the final solution, the language used was R with the following packages: sta
 \section{Algorithm}
 For the final submission the method used was conditional inference trees with boosting. Conditional inference trees are a regression tool that allows for non-linear regression based on statistical significance of the input features and the response variable, this method is presented in \cite{Hothorn2005}. The main idea is to perform statistical tests on every split of the tree until the null hypothesis of independence between the response and the most influential variable can not be rejected, and continue the splitting by choosing the most influential variable on the response (e.g. determined by its p-value).
 
-Even though the conditional inference trees provide a good result, there was room for improvement and this was done by using gradient boosting on the trees. Boosting is a useful learning technique, introduced by Schapire in \cite{Schapire:1990:SWL:83637.83645}, which allows ``weak'' learners to produce a strong learner by aggregating them after training each one on weighted versions of the original training data. In our case, the ``weak'' or base learner is the conditional inference tree.
+Even though the conditional inference trees provide a good result, there was room for improvement and this was done by using gradient boosting on the trees. Boosting is a useful learning technique, introduced by Schapire in \cite{Schapire:1990:SWL:83637.83645}, which allows ``weak'' learners to produce a strong learner by aggregating them after training each one on weighted versions of the original training data. In our case, the ``weak'' or base learner is the conditional inference tree. 
 
 For the implementation we used the blackboost function from the mboost package \cite{Buehlmann:2008:StatSci}. Additionally, we scaled the input and output data to improve the numerical performance of the algorithms.
 
@@ -59,7 +60,7 @@ We tried several other methods before trying the conditional inference trees, th
 	\item Ridge regression: Without input transformation or with the input variables log transformed, this performed poorly with CV(RMSE) of the order of 0.5 in 10-fold cross-validation in the training data. The results were barely above the easy baseline on the validation set.
 	\item $\epsilon$-SVR: With a Gaussian kernel, for this learner we performed cross-validation to obtain optimal C and $\gamma$, for this the CV(RMSE) in 10-fold cross-validation was 0.36 which was also the cost in the validation set. This was discarded since it only achieved the easy baseline.
 	\item Generalized linear models with boosting: This did not perform much better than the simple ridge regression, in this case boosting did not significantly improve the performance of the linear base learners.
-	\item Generalized additive models: This was the second best learning method during our tests, in this case we did some analysis of how the input features influenced the response by looking at the information from the previous learners and determined a additive model as follows $Delay \leftarrow s(RFSize)+ BranchesAllowed*fL2Ucache + s(Depth, by=fL2Ucache)$, the cost during 10-fold cross-validation was $0.2$ and the cost in validation was $0.17$.
+    \item Generalized additive models: This was the second best learning method during our tests, in this case we did some analysis of how the input features influenced the response by looking at the information from the previous learners and determined a additive model as follows $Delay \leftarrow s(RFSize)+ BranchesAllowed + te(Depth, fL2Ucache)$\footnote{Where $s$ denote splines, a sum of basis functions estimated by the GAM. The $te$ term specifies a non-linear interaction between two variables (a tensor product)}  the cost during 10-fold cross-validation was $0.2$ and the cost in validation was $0.17$.
 	
 \end{itemize}
 
